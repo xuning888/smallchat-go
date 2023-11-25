@@ -16,7 +16,7 @@ type ChatServer struct {
 	maxClient int
 	Address   string
 	server    net.Listener
-	Clients   []*ChatClient
+	Handlers  []*ChatHandler
 	closeChan <-chan struct{}
 }
 
@@ -28,7 +28,7 @@ func CreateServer(address string, port int, maxClient int) *ChatServer {
 		maxClient: maxClient,
 		Address:   address,
 		server:    tcpListener,
-		Clients:   make([]*ChatClient, 0),
+		Handlers:  make([]*ChatHandler, 0),
 		closeChan: closeChan,
 	}
 	return server
@@ -72,11 +72,10 @@ func (s *ChatServer) Spin() {
 		}
 		log.Printf("shutting down...")
 		_ = s.server.Close()
-		for _, c := range s.Clients {
+		for _, c := range s.Handlers {
 			_ = c.Close()
 		}
 	}()
-	ctx := context.Background()
 	var waitDone sync.WaitGroup
 	for {
 		conn, err := s.server.Accept()
@@ -85,22 +84,23 @@ func (s *ChatServer) Spin() {
 			break
 		}
 		log.Printf("accept link %s\n", conn.RemoteAddr().String())
-		numClient := len(s.Clients)
+		numClient := len(s.Handlers)
 		if numClient == s.maxClient {
-			_, err = conn.Write([]byte(fmt.Sprintf("can't accept")))
+			_, err = conn.Write([]byte(fmt.Sprintf("can't accept\n")))
 			if err != nil {
 				log.Printf("can't accept, wirte msg err:%s", err)
 			}
 			_ = conn.Close()
 		}
+		ctx := context.Background()
 		log.Printf("connected %v\n", conn.RemoteAddr().String())
-		client := CreateClient(ctx, conn, conn.RemoteAddr().String(), s)
+		client := CreateHandler(ctx, conn, conn.RemoteAddr().String(), s)
 		n, err := client.WriteMsg(fmt.Sprintf("Welcome to Simple Chat! Use /nick <nick> to set your nick!\n"))
 		if err != nil {
 			_ = client.Close()
 			log.Printf("write %d byte to %s", n, conn.RemoteAddr().String())
 		}
-		s.Clients = append(s.Clients, client)
+		s.Handlers = append(s.Handlers, client)
 		waitDone.Add(1)
 		go func() {
 			defer func() {
@@ -112,25 +112,25 @@ func (s *ChatServer) Spin() {
 	waitDone.Wait()
 }
 
-func (s *ChatServer) RemoveC(c *ChatClient) {
-	clients := s.Clients
+func (s *ChatServer) RemoveC(c *ChatHandler) {
+	clients := s.Handlers
 	if clients == nil {
 		return
 	}
 	rIndex := -1
-	for idx, client := range s.Clients {
+	for idx, client := range s.Handlers {
 		if client == c {
 			rIndex = idx
 			break
 		}
 	}
 	if rIndex != -1 {
-		s.Clients[rIndex] = nil
+		s.Handlers[rIndex] = nil
 		left := clients[:rIndex]
 		right := clients[rIndex+1:]
-		temp := make([]*ChatClient, 0)
+		temp := make([]*ChatHandler, 0)
 		temp = append(temp, left...)
 		temp = append(temp, right...)
-		s.Clients = temp
+		s.Handlers = temp
 	}
 }

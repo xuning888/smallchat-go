@@ -1,5 +1,5 @@
 # small-chat
-模仿自[redis贡献者的教育项目](https://github.com/antirez/smallchat)
+因为在看[redis贡献者的教育项目](https://github.com/antirez/smallchat)所以模仿了一下
 
 ```shell
 make build

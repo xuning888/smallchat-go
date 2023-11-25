@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-type ChatClient struct {
+type ChatHandler struct {
 	Ctx    context.Context
 	Conn   net.Conn
 	Nick   string
@@ -18,9 +18,9 @@ type ChatClient struct {
 	box    *box.MessageBox
 }
 
-func CreateClient(ctx context.Context,
-	conn net.Conn, nick string, server *ChatServer) *ChatClient {
-	return &ChatClient{
+func CreateHandler(ctx context.Context,
+	conn net.Conn, nick string, server *ChatServer) *ChatHandler {
+	return &ChatHandler{
 		Ctx:    ctx,
 		Conn:   conn,
 		Nick:   nick,
@@ -29,29 +29,32 @@ func CreateClient(ctx context.Context,
 	}
 }
 
-func (c *ChatClient) Close() error {
+func (c *ChatHandler) Close() error {
 	if c.Conn != nil {
 		return c.Conn.Close()
 	}
 	return nil
 }
 
-func (c *ChatClient) WriteMsg(msg string) (int, error) {
+func (c *ChatHandler) WriteMsg(msg string) (int, error) {
 	return c.Conn.Write([]byte(msg))
 }
 
-func (c *ChatClient) Handle() {
+func (c *ChatHandler) Handle() {
 	reader := bufio.NewReader(c.Conn)
 	for {
 		msg, err := reader.ReadString('\n')
 		if err != nil {
 			c.server.RemoveC(c)
-			log.Printf("%s connection close, clients:%d\n", c.Conn.RemoteAddr().String(), len(c.server.Clients))
+			log.Printf("%s connection close, clients:%d\n", c.Conn.RemoteAddr().String(), len(c.server.Handlers))
 			_ = c.Close()
 			return
 		}
 		if strings.HasPrefix(msg, "/nick") {
 			segs := strings.Split(msg, " ")
+			if len(segs) < 2 {
+				return
+			}
 			newNick := strings.TrimSpace(segs[1])
 			oldNick := c.Nick
 			c.Nick = newNick
@@ -64,13 +67,13 @@ func (c *ChatClient) Handle() {
 	}
 }
 
-func (c *ChatClient) SendMsgToAll() {
+func (c *ChatHandler) SendMsgToAll() {
 	msg := c.box.PullMsg()
 	if msg == nil {
 		return
 	}
 	sendMsg := msg.Msg(c.Nick)
-	clients := c.server.Clients
+	clients := c.server.Handlers
 	if clients != nil {
 		for _, client := range clients {
 			if client != nil && client != c {

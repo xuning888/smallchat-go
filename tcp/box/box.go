@@ -11,11 +11,11 @@ type MessageBox struct {
 	limit    int
 }
 
-func CreateMsgBox(size int) *MessageBox {
-	size = int(math.Max(float64(size), 10))
+func CreateMsgBox(limit int) *MessageBox {
+	limit = int(math.Max(float64(limit), 10))
 	return &MessageBox{
 		Messages: make([]*protocol.Message, 0),
-		limit:    size,
+		limit:    limit,
 	}
 }
 
