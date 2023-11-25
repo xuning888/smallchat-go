@@ -94,7 +94,7 @@ func (s *ChatServer) Spin() {
 			_ = conn.Close()
 		}
 		log.Printf("connected %v\n", conn.RemoteAddr().String())
-		client := CreateClient(ctx, conn, "", s)
+		client := CreateClient(ctx, conn, conn.RemoteAddr().String(), s)
 		n, err := client.WriteMsg(fmt.Sprintf("Welcome to Simple Chat! Use /nick <nick> to set your nick!\n"))
 		if err != nil {
 			_ = client.Close()
