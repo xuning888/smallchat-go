@@ -6,7 +6,7 @@ make build
 ./out/bin/smallchat
 ```
 
-在terminal中执行以下命令
+在不同的terminal中执行以下命令
 ```shell
 nc 127.0.0.1 7712
 /nick <nick> #重新命令
