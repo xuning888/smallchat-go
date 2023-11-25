@@ -26,7 +26,7 @@ func createMsg(msg string) *message {
 
 func (m *message) Msg(nick string) string {
 	sendTimeStr := m.sendTime.Format("2006-01-02 15:04:05")
-	return fmt.Sprintf("%s:%s -> %s", sendTimeStr, nick, m.msg)
+	return fmt.Sprintf("%s#%s -> %s", sendTimeStr, nick, m.msg)
 }
 
 type msgBox struct {
@@ -109,12 +109,14 @@ func (c *ChatClient) Handle() {
 		if strings.HasPrefix(msg, "/nick") {
 			segs := strings.Split(msg, " ")
 			newNick := strings.TrimSpace(segs[1])
+			oldNick := c.Nick
 			c.Nick = newNick
 			_, _ = c.WriteMsg(fmt.Sprintf("set nick success nickName: %s\n", newNick))
+			c.box.pushMsg(fmt.Sprintf("%s reset nick from %s to %s\n", c.Nick, oldNick, newNick))
 		} else {
 			c.box.pushMsg(msg)
-			c.SendMsgToAll()
 		}
+		c.SendMsgToAll()
 	}
 }
 
