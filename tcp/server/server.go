@@ -94,19 +94,19 @@ func (s *ChatServer) Spin() {
 		}
 		ctx := context.Background()
 		log.Printf("connected %v\n", conn.RemoteAddr().String())
-		client := CreateHandler(ctx, conn, conn.RemoteAddr().String(), s)
-		n, err := client.WriteMsg(fmt.Sprintf("Welcome to Simple Chat! Use /nick <nick> to set your nick!\n"))
+		handler := CreateHandler(ctx, conn, conn.RemoteAddr().String(), s)
+		n, err := handler.WriteMsg(fmt.Sprintf("Welcome to Simple Chat! Use /nick <nick> to set your nick!\n"))
 		if err != nil {
-			_ = client.Close()
+			_ = handler.Close()
 			log.Printf("write %d byte to %s", n, conn.RemoteAddr().String())
 		}
-		s.Handlers = append(s.Handlers, client)
+		s.Handlers = append(s.Handlers, handler)
 		waitDone.Add(1)
 		go func() {
 			defer func() {
 				waitDone.Done()
 			}()
-			client.Handle()
+			handler.Handle()
 		}()
 	}
 	waitDone.Wait()

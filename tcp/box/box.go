@@ -28,7 +28,7 @@ func (mbx *MessageBox) PushMsg(msg string) {
 	mbx.Messages = append(mbx.Messages, curMsg)
 }
 
-func (mbx *MessageBox) PullMsg() *protocol.Message {
+func (mbx *MessageBox) PeekMsg() *protocol.Message {
 	messages := mbx.Messages
 	msgLen := len(messages)
 	if msgLen == 0 {
@@ -39,6 +39,15 @@ func (mbx *MessageBox) PullMsg() *protocol.Message {
 		return mbx.Messages[i].SendTime.Before(mbx.Messages[j].SendTime)
 	})
 	curMg := mbx.Messages[0]
-	mbx.Messages = mbx.Messages[1:]
 	return curMg
+}
+
+func (mbx *MessageBox) PopMsg() *protocol.Message {
+	msg := mbx.PeekMsg()
+	mbx.Messages = mbx.Messages[1:]
+	return msg
+}
+
+func (mbx *MessageBox) Len() int {
+	return len(mbx.Messages)
 }

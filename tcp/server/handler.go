@@ -68,17 +68,25 @@ func (c *ChatHandler) Handle() {
 }
 
 func (c *ChatHandler) SendMsgToAll() {
-	msg := c.box.PullMsg()
-	if msg == nil {
-		return
-	}
-	sendMsg := msg.Msg(c.Nick)
-	clients := c.server.Handlers
-	if clients != nil {
-		for _, client := range clients {
-			if client != nil && client != c {
-				_, _ = client.WriteMsg(sendMsg)
+	length := c.box.Len()
+	for i := 0; i < length; i++ {
+		msg := c.box.PeekMsg()
+		if msg == nil {
+			return
+		}
+		sendMsg := msg.Msg(c.Nick)
+		clients := c.server.Handlers
+		sendSuccess := false
+		if clients != nil {
+			for _, client := range clients {
+				if client != nil && client != c {
+					_, _ = client.WriteMsg(sendMsg)
+					sendSuccess = true
+				}
 			}
+		}
+		if sendSuccess {
+			c.box.PopMsg()
 		}
 	}
 }
