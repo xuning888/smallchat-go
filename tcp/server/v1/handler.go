@@ -1,4 +1,4 @@
-package server
+package v1
 
 import (
 	"bufio"
@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"smallchat/tcp/box"
+	"smallchat/tcp/internal/box"
 	"strings"
 )
 
@@ -70,7 +70,7 @@ func (c *ChatHandler) Handle() {
 func (c *ChatHandler) SendMsgToAll() {
 	length := c.box.Len()
 	for i := 0; i < length; i++ {
-		msg := c.box.PeekMsg()
+		msg := c.box.PopMsg()
 		if msg == nil {
 			return
 		}
@@ -85,8 +85,8 @@ func (c *ChatHandler) SendMsgToAll() {
 				}
 			}
 		}
-		if sendSuccess {
-			c.box.PopMsg()
+		if !sendSuccess {
+			c.box.PushMsgWithTime(msg)
 		}
 	}
 }
